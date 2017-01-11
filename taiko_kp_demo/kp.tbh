@@ -1,0 +1,30 @@
+Const KEY_0_CHARS="0"
+Const KEY_1_CHARS="1.?!,@-_:; "
+Const KEY_2_CHARS="2ABC"
+Const KEY_3_CHARS="3DEF"
+Const KEY_4_CHARS="4GHI"
+Const KEY_5_CHARS="5JKL"
+Const KEY_6_CHARS="6MNO"
+Const KEY_7_CHARS="7PQRS"
+Const KEY_8_CHARS="8TUV"
+Const KEY_9_CHARS="9WXYZ"
+
+Const INPUT_MODE_MESSAGE="Input mode:"
+Const NUMERICAL_INPUT="123"
+Const ALPHABETICAL_INPUT="ABC"
+
+Const ALPHABETICAL=1
+Const NUMERICAL=0
+
+declare sub kp_start
+
+declare sub kp_press_proc(key_pr as byte)
+declare sub kp_release(key_rl as byte)
+declare sub kp_longpress (key_lp as byte)
+declare sub kp_longrelease(key_lrl as byte)
+
+declare sub cursor_forward
+declare sub cursor_backward
+declare sub clear_typing_area
+declare sub lcd_display_legend
+declare sub check_pressed_key(key_pr as byte)

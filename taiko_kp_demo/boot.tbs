@@ -1,0 +1,115 @@
+include "global.tbh"
+
+'============================================================================
+sub boot
+
+	'----- SETUP BUZZER -----
+	
+	beep.divider=21660/4
+	io.num=PL_IO_NUM_45_CO
+	io.enabled=YES
+
+	'----- SETUP KEYPAD -----
+	
+	kp.longpressdelay=80
+	kp.longreleasedelay=50
+	kp.repeatdelay=254 
+
+	io.num=PL_IO_NUM_24
+	io.enabled=YES
+
+	io.num=PL_IO_NUM_25
+	io.enabled=YES
+
+	io.num=PL_IO_NUM_26
+	io.enabled=YES
+
+	io.num=PL_IO_NUM_27
+	io.enabled=YES
+	
+	kp.scanlinesmapping="24,25,26,27"
+	kp.returnlinesmapping="28,29,30,31"
+	kp.enabled=YES
+
+#if LCD_TYPE=SAMSUNG_S6B0108
+
+	lcd.iomapping="44,46,40,41,43,42,4" 'RST,EN,CS1,CS2,DI,RW,data_bus
+	
+	io.num=PL_IO_NUM_46 'EN
+	io.enabled=YES
+	
+	io.num=PL_IO_NUM_44 'RST
+	io.enabled=YES
+
+	io.num=PL_IO_NUM_40 'CS1
+	io.enabled=YES
+
+	io.num=PL_IO_NUM_41 'CS2
+	io.enabled=YES
+
+	io.num=PL_IO_NUM_42 'R/-W
+	io.enabled=YES
+
+	io.num=PL_IO_NUM_43 'D/-I
+	io.enabled=YES
+
+	lcd.width=128
+	lcd.height=64
+	lcd.enabled=YES
+	lcd_set_contrast(11)
+
+#elif LCD_TYPE=HIMAX_HX8309
+
+	io.num=PL_IO_NUM_47
+	io.enabled=YES
+	io.state=HIGH
+
+	lcd.iomapping="44,43,42,41,40,4" 'RST,DC,WR,RD,CS,data_bus
+	
+	io.num=PL_IO_NUM_40 'RST
+	io.enabled=YES
+	
+	io.num=PL_IO_NUM_41 'DC
+	io.enabled=YES
+
+	io.num=PL_IO_NUM_42 'WR
+	io.enabled=YES
+
+	io.num=PL_IO_NUM_43 'RD
+	io.enabled=YES
+
+	io.num=PL_IO_NUM_44 'CS
+	io.enabled=YES
+
+	lcd.width=176
+	lcd.height=220
+	lcd.enabled=YES
+
+#else
+
+	lcd.iomapping="44,43,42,41,40,4" 'RST,DC,WR,RD,CS,data_bus
+	
+	io.num=PL_IO_NUM_40 'RST
+	io.enabled=YES
+	
+	io.num=PL_IO_NUM_41 'DC
+	io.enabled=YES
+
+	io.num=PL_IO_NUM_42 'WR
+	io.enabled=YES
+
+	io.num=PL_IO_NUM_43 'RD
+	io.enabled=YES
+
+	io.num=PL_IO_NUM_44 'CS
+	io.enabled=YES
+
+	lcd.width=128
+	lcd.height=96
+	lcd.enabled=YES
+#endif
+
+	romfile.open("Tibbo-5x7(V).bin")
+	lcd.setfont(romfile.offset)
+
+end sub

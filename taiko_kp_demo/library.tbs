@@ -1,0 +1,13 @@
+include "global.tbh"
+
+'============================================================================
+sub delayTimer(imax as byte)		'delay timer, imax of 1 = 0.5 second
+
+	dim w as word
+	
+	w = sys.timercount + imax
+	while sys.timercount <= w
+		doevents
+	wend
+	
+end sub

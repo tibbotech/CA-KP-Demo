@@ -1,0 +1,462 @@
+include "global.tbh"
+
+dim xx as string
+
+type my_lcd
+	x as byte	
+	y as byte	
+end type
+
+dim	cur as my_lcd						'cursor position
+dim temp_input(10),u(10),q as string(1)	'store temporary key in buffer 
+dim keyp(10) as string(11)				'variables of key on pad
+dim press_state(10) as byte
+dim pos,i,enter_type as byte
+dim input_mode_type_posX as byte			
+dim kb_press(16),kb_release(16) as no_yes 	' state of each key
+
+
+'============================================================================
+sub kp_start
+' kp_start initialize the parameters for the panel, cursor position on LCD, 
+' and setup the input mode. It also defines each key's representative.
+
+							
+	lcd_message(INPUT_MODE_MESSAGE,PL_LCD_TEXT_ALIGNMENT_TOP_LEFT,LCD_MESSAGE_FULL_HEIGHT)	' lcd_message() display INPUT_MODE_MESSAGE="Input mode:"
+							
+	lcd_display_legend	' lcd_display_legend() display definition of  F1,F2 etc 
+	
+	xx=""								' temporary string buffer
+	q=""								' temporary key buffer
+	pos=0								' the position of last character of temporary string buffer
+	enter_type=ALPHABETICAL				' enter_type=ALPHABETICAL means alphabetical input mode
+	input_mode_type_posX=lcd.width-18 	' set the position of input mode
+	cur.x=5								' set the cursor start point x=5, y=LCD_LEGEND_AREA_HEIGHT+3
+	cur.y=LCD_LEGEND_AREA_HEIGHT+3
+	lcd.print("_",cur.x,cur.y)								' set the cursor to use the "_" character
+							
+	lcd.print(ALPHABETICAL_INPUT,input_mode_type_posX,0)	' display the input type on top right corner		
+	for i=0 to 9			' initial the relative keywords
+		press_state(i)=1	' press_state=1 means input mode is alphabetical  
+		kb_release(i)=NO	' kb_release(s) define each key's release state
+		kb_press(i)=NO		' kb_press(es) define each key's press state
+		u(i)=""				' clear temporary input buffer
+	next i
+	press_state(0)=0		' initial state of "0" key 
+	'----- Define each key on keypad -----	
+	keyp(0)=KEY_0_CHARS
+	keyp(1)=KEY_1_CHARS
+	keyp(2)=KEY_2_CHARS
+	keyp(3)=KEY_3_CHARS
+	keyp(4)=KEY_4_CHARS
+	keyp(5)=KEY_5_CHARS
+	keyp(6)=KEY_6_CHARS
+	keyp(7)=KEY_7_CHARS
+	keyp(8)=KEY_8_CHARS
+	keyp(9)=KEY_9_CHARS
+	
+end sub
+
+'============================================================================
+sub kp_press_proc(key_pr as byte)
+' This sub is activated when key is pressed, called from the on_kp subroutine
+
+	dim m,n as byte
+
+	if key_pr <10 then goto kp_press_state1 'following are function keys
+		
+	select case key_pr 		'key_number passed from on_kp event
+	
+	case 66:  'F1  "CLEAR"	clear display area. No action in pressed state, 
+							'but process the pressed key first.
+			 check_pressed_key(key_pr)
+	case 16:  'F2 scrolling between Alphabetical and Numeric input mode
+
+			if enter_type=ALPHABETICAL then 'switch alphabetical to numerical input mode
+
+				enter_type=NUMERICAL
+				for m=0 to 9			' set 0 ~ 9 key to numerical mode
+					press_state(m)=0
+				next m
+				
+				lcd.print(NUMERICAL_INPUT,input_mode_type_posX,0)
+				
+			else if enter_type=NUMERICAL then		'numerical type of entering
+	
+				enter_type=ALPHABETICAL
+				for m=1 to 9			' set 1 ~ 9 key to alphabetical mode, 
+										' and 0 is still numerical mode.
+					press_state(m)=1
+				next m
+				lcd.print(ALPHABETICAL_INPUT,input_mode_type_posX,0)
+			end if
+
+	case 48: 'F4  "BACKSPACE" No action in pressed state.
+	
+			check_pressed_key(key_pr)	
+	
+	case 49: 'E display entered data
+	
+ 			check_pressed_key(key_pr) 'check pressed key before display entered data
+
+			lcd_message(xx,PL_LCD_TEXT_ALIGNMENT_MIDDLE_CENTER,LCD_MESSAGE_FULL_HEIGHT)
+			delayTimer(5)
+			kp_start
+			
+	case 32: 'F3 No operation
+	
+	case 50: 'C	 No operation
+	
+			
+	end select
+	
+	goto kp_press_endsub
+	
+kp_press_state1:
+
+	for m =0 to 9					' if other key already pressed, ignor the key_pr
+		if kb_press(m) =YES and m<> key_pr then goto kp_press_endsub
+	next m
+	
+	for m =0 to 9					' previous keys is in the released state, put the released key to 
+									' buffer and accept pressed key on pad.(from 0 to 9 key)
+		if kb_release(m) = YES and m<>key_pr then goto check_short_0
+	next m
+									' If entering type is numeric, you can retype key
+									' to get the same number.
+	if kb_release(key_pr) = YES and enter_type=NUMERICAL then 
+			xx=xx+temp_input(key_pr)
+			pos=pos+1
+			kb_release(key_pr) = NO
+			cursor_forward			' move cursor forward
+	end if
+	goto check_short_1
+									' put the released key to buffer 
+check_short_0:
+	if enter_type=ALPHABETICAL then 'alphabetical type of entering
+		press_state(m)=1			
+	else if	enter_type=NUMERICAL then'numeric type of entering
+		press_state(m)=0
+	end if		
+
+	xx=xx+u(m)						' store typed word to xx buffer
+	pos=pos+1						' increment the position pointer
+	kb_release(m) = NO				' when word is stored in buffre,  kb_release shall be set to NO state 
+									 
+	cursor_forward					' call sub to move cursor forward
+
+check_short_1:						' Key press procedure
+			
+	kb_press(key_pr) =YES
+			
+	if key_pr =0 then 
+		temp_input(key_pr)="0"
+		goto check_short_2
+	end if
+		
+	temp_input(key_pr)= mid(keyp(key_pr),press_state(key_pr)+1,1) ' get the character from keyp(?) string 
+
+check_short_2:		
+
+	lcd.print(temp_input(key_pr),cur.x,cur.y)
+
+kp_press_endsub:
+
+end sub
+
+'============================================================================
+sub kp_release(key_rl as byte)
+' This sub is activated when key releasing 
+
+		dim max_state as byte 				' refer the length of variable keyp(key_rl)
+	
+	select case key_rl 		' activate the back space function in kap release event 
+	
+	case 66:  'F1  "CLEAR"	clear display area 
+			
+ 			xx=""
+			pos=0
+			clear_typing_area
+			cur.x=5
+			cur.y=LCD_LEGEND_AREA_HEIGHT+3
+			
+			lcd.print("_",cur.x,cur.y)
+			
+	case 48: 'F4  "BACKSPACE"
+			lcd.print(" ",cur.x,cur.y)
+			if	cur.x=5 and cur.y=LCD_LEGEND_AREA_HEIGHT+3 then ' stay on the beginning position when
+																' cursor moving back to beginning position.
+				lcd.print("_",cur.x,cur.y)
+				goto end_backspace
+			end if
+
+			cursor_backward				' cursor move backward	
+			lcd.print("_",cur.x,cur.y)
+			xx=left(xx,pos-1)
+			pos=pos-1
+end_backspace:	
+
+	end select
+
+		if key_rl>9 then goto end_release 	' accept 0~9 keys and other release keys event are ignor
+
+		if kb_press(key_rl)<>YES then goto end_release
+			
+		press_state(key_rl) = press_state(key_rl)+1 	
+					
+		if	press_state(key_rl)=1 then
+				press_state(key_rl)=0
+		end if
+			
+		if key_rl=0 then 
+			lcd.print(NUMERICAL_INPUT,input_mode_type_posX,0)
+			goto no_max	
+		end if 
+		
+		max_state=len(keyp(key_rl))			 	 
+		if	press_state(key_rl)=max_state then
+			press_state(key_rl)=1
+		end if 
+no_max:			
+		kb_press(key_rl)=NO	 			' return to waiting state 
+		kb_release(key_rl)=YES
+		u(key_rl)=temp_input(key_rl)
+	
+end_release:			
+
+end sub	
+
+'============================================================================
+sub kp_longpress (key_lp as byte) 			' 
+' This sub is activated when key pressing long
+
+	dim s,lp_max_state as byte	
+	
+		if key_lp>9 then goto endsub:
+		
+		lp_max_state = len(keyp(key_lp))
+				
+		for s = 1 to lp_max_state
+			if press_state(key_lp)=s then goto scroll_to_num 
+		next s
+		
+		goto endsub
+		
+scroll_to_num:		
+		press_state(key_lp) = 0 
+			
+		lcd.print(NUMERICAL_INPUT,input_mode_type_posX,0)' display the entering type on top right corner	
+			
+		temp_input(key_lp)=mid(keyp(key_lp),1,1)
+		lcd.print(temp_input(key_lp),cur.x,cur.y)
+		
+endsub:
+end sub
+
+'============================================================================
+sub kp_longrelease (key_lrl as byte)
+' This sub is activated when key released long
+
+			if key_lrl>9 then goto end_longrelease
+			if kb_release(key_lrl)=NO then goto end_longrelease
+
+			kb_release(key_lrl)=NO	
+			
+			if enter_type=ALPHABETICAL then 	
+				press_state(key_lrl)=1			
+			else if	enter_type=NUMERICAL then
+			 	press_state(key_lrl)=0
+			 	end if
+			q=temp_input(key_lrl)	
+		if q="" then goto end_longrelease 	' temperorary input key stores in q buffer
+		
+			if enter_type=ALPHABETICAL then 
+				lcd.print(ALPHABETICAL_INPUT,input_mode_type_posX,0)
+			else if enter_type=NUMERICAL then 
+				lcd.print(NUMERICAL_INPUT,input_mode_type_posX,0)
+			end if 
+			xx=xx+q
+			pos=pos+1
+	
+			cursor_forward				' cursor move forward
+			lcd.print("_",cur.x,cur.y)	' place under-line character next to pressed key
+end_longrelease:		
+			
+end sub			
+
+'============================================================================
+sub cursor_forward
+'typing_area    x1=2 <br>
+'typing_area    y1=LCD_LEGEND_AREA_HEIGHT <br>
+'typing_area    x2=lcd.width-3 <br>
+'typing_area    y2=line_toppos-2  'legend_toppos-3 => (lcd.height-(LCD_LEGEND_AREA_HEIGHT*2))-3 <br>
+'<br><br>
+'characters display start x=5
+'characters display end of x= (lcd.width-3-2) assumed 
+'pp=((lcd.width-5)-5)/8 ' pp is how-many characters on one line
+'characters display end of x= 5+ pp*8
+'clear area of x axle is 5 + pp*8 +((lcd.width-5)-5) mod 8
+
+'characters display start axle y =LCD_LEGEND_AREA_HEIGHT+3
+'characters display end of y =(lcd.height-(LCD_LEGEND_AREA_HEIGHT*2))-3-2 assumed
+'pp = (((lcd.height-(LCD_LEGEND_AREA_HEIGHT*2))-5)-(LCD_LEGEND_AREA_HEIGHT+3))/9
+'characters display end of y= (LCD_LEGEND_AREA_HEIGHT+3)+ pp*9
+'clear area of Y axle is (LCD_LEGEND_AREA_HEIGHT+3)+ pp*9 +
+'(((lcd.height-(LCD_LEGEND_AREA_HEIGHT*2))-5)-(LCD_LEGEND_AREA_HEIGHT+3)) mod 9	
+
+	dim pp,y_end as byte
+	pp = (((lcd.height-(LCD_LEGEND_AREA_HEIGHT*2))-5)-((LCD_LEGEND_AREA_HEIGHT)+3))/9			
+	y_end =  (LCD_LEGEND_AREA_HEIGHT+3)+ pp*9
+	
+	cur.x=cur.x+8		' display area from x axle 5 to lcd.width-3-2
+    					' display area from y axle LCD_LEGEND_AREA_HEIGHT+3 
+						' to line_toppos-2-2
+	if cur.x>=(lcd.width-5) then
+		cur.x=5			' move 8 points in each horizental move 	
+		cur.y=cur.y+9	' move 9 points in each vertical move
+	end if
+
+	if cur.y>= y_end then
+		cur.y=LCD_LEGEND_AREA_HEIGHT+3
+	end if
+end sub
+
+'============================================================================
+sub cursor_backward
+
+			dim pp,y_end as byte
+			
+			pp=((lcd.width-5)-5)/8
+
+			cur.x=cur.x-8
+			if cur.x > 252 then ' Because cur.x is defined as byte, its range
+								' should be 0 to 255. So, 0-8= 248. 				
+				cur.x=pp*8+5
+				cur.y=cur.y-9
+			end if
+					
+			if cur.y<LCD_LEGEND_AREA_HEIGHT+3 then
+
+				pp=((lcd.height-(LCD_LEGEND_AREA_HEIGHT*2)-5)-(LCD_LEGEND_AREA_HEIGHT+3))/9
+				
+				cur.y=(pp-1)*9+(LCD_LEGEND_AREA_HEIGHT+3)
+			end if
+end sub
+
+'===============================================================================
+sub lcd_display_legend
+	dim x,y as byte
+	dim width,height,f1_leftpos,f2_leftpos,f3_leftpos,f4_leftpos,legend_toppos,line_toppos,line_bottompos as word
+	dim typing_area_x1,typing_area_x2,typing_area_y1,typing_area_y2 as word
+	dim f1_str, f2_str, f3_str, f4_str as string(16)
+	dim backup_alignment as pl_lcd_text_alignment
+	
+	'display key legends
+	lcd.textalignment=PL_LCD_TEXT_ALIGNMENT_BOTTOM_CENTER
+	
+	width=lcd.width/4
+	f1_leftpos=0
+	f2_leftpos=width
+	f3_leftpos=width*2
+	f4_leftpos=width*3
+	legend_toppos=lcd.height-(LCD_LEGEND_AREA_HEIGHT*2)
+	line_toppos=legend_toppos-1
+	line_bottompos=lcd.height-1
+
+	' define a rectanle area for typing 
+	typing_area_x1=2
+	typing_area_y1=LCD_LEGEND_AREA_HEIGHT
+	typing_area_x2=lcd.width-3
+	typing_area_y2=line_toppos-2  'legend_toppos-3 => (lcd.height-(LCD_LEGEND_AREA_HEIGHT*2))-3
+	
+	lcd.rectangle(typing_area_x1,typing_area_y1,typing_area_x2,typing_area_y2)
+
+	f1_str="F1"
+	f2_str="F2"
+	f3_str="F3"
+	f4_str="F4"
+
+	lcd.horline(0,lcd.width,line_toppos)
+	lcd.verline(f2_leftpos,line_toppos,line_bottompos)
+	lcd.verline(f3_leftpos,line_toppos,line_bottompos)
+	lcd.verline(f4_leftpos,line_toppos,line_bottompos)
+
+	backup_alignment=lcd.textalignment
+	lcd.textalignment=PL_LCD_TEXT_ALIGNMENT_BOTTOM_CENTER
+	lcd.printaligned(f1_str,f1_leftpos,legend_toppos,width,LCD_LEGEND_AREA_HEIGHT)
+	lcd.printaligned(f2_str,f2_leftpos,legend_toppos,width,LCD_LEGEND_AREA_HEIGHT)
+	lcd.printaligned(f3_str,f3_leftpos,legend_toppos,width,LCD_LEGEND_AREA_HEIGHT)
+	lcd.printaligned(f4_str,f4_leftpos,legend_toppos,width,LCD_LEGEND_AREA_HEIGHT)
+	
+	legend_toppos=lcd.height-LCD_LEGEND_AREA_HEIGHT
+
+	f1_str="CLEAR"
+	f2_str="AB/12"
+	f3_str=""
+	f4_str="BS"
+
+	lcd.printaligned(f1_str,f1_leftpos,legend_toppos,width,LCD_LEGEND_AREA_HEIGHT)
+	lcd.printaligned(f2_str,f2_leftpos,legend_toppos,width,LCD_LEGEND_AREA_HEIGHT)
+	lcd.printaligned(f3_str,f3_leftpos,legend_toppos,width,LCD_LEGEND_AREA_HEIGHT)
+	lcd.printaligned(f4_str,f4_leftpos,legend_toppos,width,LCD_LEGEND_AREA_HEIGHT)
+	
+	lcd.textalignment=backup_alignment
+end sub
+
+'============================================================================
+sub clear_typing_area
+'	characters display start at x position of 5 <br>
+'	characters display end at x position of (lcd.width-3-2)<br> 
+'  	cc=((lcd.width-5)-5)/8 <br>
+'   characters display end of x= 5+ pp*8 <br>
+'<br>
+'	characters display start axle y =LCD_LEGEND_AREA_HEIGHT+3<br>
+'	characters display end of y =(lcd.height-(LCD_LEGEND_AREA_HEIGHT*2))-3-2 assumed
+'<br>
+'	cc = (((lcd.height-(LCD_LEGEND_AREA_HEIGHT*2))-5)-(LCD_LEGEND_AREA_HEIGHT+3))/9<br>
+'	characters display end of y= (LCD_LEGEND_AREA_HEIGHT+2)+ cc*8
+
+	dim x1,x2,y1,y2 as word
+	dim cc as byte	
+	
+  	cc=((lcd.width-5)-5)/8+1
+  	x2= 8*cc
+ 	cc = (((lcd.height-(LCD_LEGEND_AREA_HEIGHT*2))-5)-(LCD_LEGEND_AREA_HEIGHT+3))/9
+  	y2= 9*cc
+  	
+	x1=5
+	y1=LCD_LEGEND_AREA_HEIGHT+3
+	
+	lcd.forecolor=0
+	lcd.fill(x1,y1,x2,y2)
+	lcd.forecolor=65535
+end sub
+
+'============================================================================
+sub check_pressed_key(key_pr as byte) 'caused by F1 clear, F4 backspace, E enter key press
+	dim m as byte	
+
+	for m =0 to 9		' if other key released, put the released key to 
+						' buffer 
+		if kb_release(m) = YES and m<>key_pr then goto check_pr_key
+	next m
+	goto end_check
+check_pr_key:	
+	if enter_type=ALPHABETICAL then 'alphabetical type of entering
+		press_state(m)=1			
+	else if	enter_type=NUMERICAL then'numeric type of entering
+		press_state(m)=0
+	end if		
+
+	xx=xx+u(m)						' store typed word to xx buffer
+	pos=pos+1						' increace position pointer
+	kb_release(m) = NO				' when word is stored in buffre,  kb_release shall 
+									' be set to NO state 
+	cursor_forward					' call sub to move cursor forward
+end_check:	
+end sub
+
+
+
+
+							 

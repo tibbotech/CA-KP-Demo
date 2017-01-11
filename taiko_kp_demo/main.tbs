@@ -1,0 +1,126 @@
+'----------------------------------------------------------------------------------
+'-------------------------- Cellular Phone Keypad Demo ----------------------------
+'----------------------------------------------------------------------------------
+'
+' This demo simulated the keypad like mobile-phone. The default input mode is the
+' alphabetical mode (ABC). When you type each key, you will get alphabetical character
+' output to the LCD display. When you change the mode to the numerical mode (123) by 
+' pressing the F2 key, you will output numerical character to the display area. 
+' The following are the function keys:
+'  
+' F1 key, clear the entry area.
+' F2 key, swap betwen alphabetical (ABC) and numerical (123) modes.
+' F4 key, backspace.
+' E  key, display the entire string which you typed, on LCD panel.
+' C and F3 keys, not defined.
+'
+' This demo supports all three LCD panels for the EM1000-TEV (TEV-LB0, TEV-LB1 and TEV-LB2.
+' 
+' Some additional info about how it works:
+'
+' - All key press are ignored until the current key is released.
+' - Fast repeated press of a single key will scroll through a set of alphanumerical characters.
+' - Long press of a key while in the "alphabetical mode" will trigger the numerical value to be displayed.
+'
+'----------------------------------------------------------------------------------
+
+include "global.tbh"
+
+'============================================================================
+sub on_sys_init()
+
+	'----- Initialize system -----
+	boot()
+
+	'----- Begin Program -----
+	kp_start
+
+end sub
+
+'============================================================================
+sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
+		dim key_number as byte
+				
+
+		select case key_code				' Transfer the key_code from HEX code to 
+											' byte (key_number).
+			case &h01: '1
+				key_number=1
+				
+			case &h11: '2
+				key_number=2
+			
+			case &h21: '3
+				key_number=3
+			
+			case &h02: '4
+				key_number=4
+			
+			case &h12: '5
+				key_number=5
+									
+			case &h22: '6
+				key_number=6
+										
+			case &h03: '7
+				key_number=7
+			
+			case &h13: '8
+				key_number=8
+			
+			case &h23: '9
+				key_number=9
+			
+			case &h33: '0
+				key_number=0
+				
+			case &h00: 'F1
+				key_number=66
+				
+			case &h10: 'F2
+				key_number=16
+				
+			case &h20: 'F3
+				key_number=32
+				
+			case &h30: 'F4
+				key_number=48
+				
+			case &h31: 'E
+				key_number=49
+				
+			case &h32: 'C
+				key_number=50
+		
+		end select	
+		
+		select case key_event				'process the event by refering the typed key (key_number) 
+		
+			case PL_KP_EVENT_PRESSED
+				beep.play("B-**",PL_BEEP_CANINT)
+			
+				kp_press_proc(key_number)
+			
+			case PL_KP_EVENT_RELEASED
+				kp_release(key_number)
+			
+			case PL_KP_EVENT_LONGPRESSED
+				kp_longpress(key_number)
+			
+			case PL_KP_EVENT_LONGRELEASED
+				kp_longrelease(key_number)
+		
+		end select
+		
+			
+end sub
+
+'============================================================================
+sub on_kp_overflow()
+
+     lcd.print("Why you so rush?",0,0) 'tell the user
+     kp.enabled=YES 're-enable the keypad
+
+end sub
+
+
