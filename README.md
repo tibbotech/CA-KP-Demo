@@ -1,5 +1,3 @@
-# CA-KP-Demo
+# Cellular Phone Keypad
 
-To download the most recent project without installing GIT, please press the green "Clone or Download" button and select "Download ZIP".
-
-For more detail about this project, please visit <a href="http://tibbo.com/programmable/applications/examples/keypad.html" target="_blank">Project Description Page</a>
+This project implements cellphone-like text entry using a keypad, including special behaviour for long key presses and changing between alphabetical and numerical modes.

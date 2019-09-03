@@ -1,0 +1,95 @@
+[project]
+version = 1
+platform = EM2000W
+src_lib_ver = 2_01_03
+name = kb_demo
+output = kb_demo.tpc
+debug = on
+defines = /dLCD_TYPE=SAMSUNG_S6B0108 /dOBJECT_LCD=LCD_ENABLED /dOBJECT_FD=FD_ENABLED /dOBJECT_KP=KP_ENABLED
+transport = udp_broadcast
+
+[address1]
+platform = EM1000
+transport = udp_broadcast
+address = 0.1.0.0.40.229
+
+[file1]
+path = main.tbs
+type = basic
+format = 
+condition = 
+locked = no
+location = 
+
+[file2]
+path = global.tbh
+type = header
+format = 
+condition = 
+locked = no
+location = 
+
+[file3]
+path = library.tbs
+type = basic
+format = 
+condition = 
+locked = no
+location = 
+
+[file4]
+path = kp_check.tbs
+type = basic
+format = 
+condition = 
+locked = no
+location = 
+
+[file5]
+path = Tibbo-5x7(V).bin
+type = binary
+format = 
+condition = 
+locked = no
+location = 
+
+[file6]
+path = lcd_library.tbs
+type = basic
+format = 
+condition = 
+locked = no
+location = 
+
+[file7]
+path = kp.tbh
+type = header
+format = 
+condition = 
+locked = no
+location = 
+
+[file8]
+path = lcd.tbh
+type = header
+format = 
+condition = 
+locked = no
+location = 
+
+[file9]
+path = boot.tbs
+type = basic
+format = 
+condition = 
+locked = no
+location = 
+
+[file10]
+path = boot.tbh
+type = header
+format = 
+condition = 
+locked = no
+location = 
+
